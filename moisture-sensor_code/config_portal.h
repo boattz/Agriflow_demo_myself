@@ -277,14 +277,12 @@ static bool loadConfig(DeviceConfig &cfg) {
   return set && cfg.wifiSsid.length() > 0;
 }
 
-// Wipe WiFi only (keep server URL) so the portal reopens on next boot.
+// Wipe NVS so the portal reopens on next boot.
 static void clearConfig() {
   cpPrefs.begin(CP_NS, false);
-  cpPrefs.remove("ssid");
-  cpPrefs.remove("pass");
-  cpPrefs.putBool("set", false);
+  cpPrefs.clear();
   cpPrefs.end();
-  Serial.println("[CONFIG] WiFi cleared — portal will open next boot.");
+  Serial.println("[CONFIG] Cleared — portal will open next boot.");
 }
 
 // Open the AP + captive portal. Blocks until the user submits the form,
