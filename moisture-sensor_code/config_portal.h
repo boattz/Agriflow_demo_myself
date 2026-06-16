@@ -132,10 +132,10 @@ static String cpBuildPage() {
 
     + "<label>&#128421;&#65039; Dashboard Server IP</label>"
     + "<div class='row'>"
-    + "  <input class='ip' name='ip' placeholder='192.168.1.53' required>"
+    + "  <input class='ip' name='ip' placeholder='your-server.up.railway.app' required>"
     + "  <input class='port' name='port' type='number' value='3000' min='1' max='65535'>"
     + "</div>"
-    + "<div class='hint'>The IP shown by the server when it starts (npm start).</div>"
+    + "<div class='hint'>For Railway/cloud: enter domain (port auto-detected). For local: enter IP + port.</div>"
 
     + "<button type='submit'>&#128190; Save &amp; Connect</button>"
     + "</form></body></html>";
@@ -373,8 +373,25 @@ static void startConfigPortal() {
 }
 
 // Build the sensor endpoint URL from saved config.
+// Auto-detect: if serverIp contains letters (domain) → HTTPS, else HTTP.
 static String buildServerUrl(const DeviceConfig &cfg) {
-  return "http://" + cfg.serverIp + ":" + String(cfg.serverPort) + "/api/sensor";
+  // Check if serverIp is a domain (contains letters) or IP (numbers only)
+  bool isDomain = false;
+  for (unsigned int i = 0; i < cfg.serverIp.length(); i++) {
+    char c = cfg.serverIp[i];
+    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '-') {
+      isDomain = true;
+      break;
+    }
+  }
+
+  if (isDomain) {
+    // Domain (like Railway) → HTTPS, port 443
+    return "https://" + cfg.serverIp + "/api/sensor";
+  } else {
+    // IP address → HTTP with port
+    return "http://" + cfg.serverIp + ":" + String(cfg.serverPort) + "/api/sensor";
+  }
 }
 
 // Poll the reset button. Returns true if held long enough → caller wipes

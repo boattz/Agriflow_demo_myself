@@ -172,7 +172,12 @@ void loop() {
     HTTPClient http;
     http.begin(serverUrl);
     http.addHeader("Content-Type", "application/json");
-    http.setTimeout(5000);
+    http.setTimeout(10000);
+
+    // Skip SSL certificate verification for HTTPS (Railway, cloud servers)
+    if (serverUrl.startsWith("https")) {
+      http.setInsecure();
+    }
 
     String json = "{";
     json += "\"device\":\"ESP32_Sprinkler\",";
