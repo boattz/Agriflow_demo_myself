@@ -1,6 +1,6 @@
 /*
  * =====================================================
- *  Smart Sprinkler — ESP32 DHT Humidity Sensor
+ *  Agriflow — ESP32 DHT Humidity Sensor
  *  Sends Humidity + Temperature → Node.js Dashboard
  * =====================================================
  *
@@ -20,7 +20,7 @@
  *  → Also install "Adafruit Unified Sensor" if prompted
  *
  *  FIRST BOOT:
- *  ESP32 opens "SmartSprinkler-Setup" WiFi AP. Connect from your
+ *  ESP32 opens "Agriflow-Setup" WiFi AP. Connect from your
  *  phone/computer, fill in home WiFi + dashboard IP, then Save.
  *  Settings stored in NVS — subsequent boots reconnect automatically.
  *  Hold BOOT button ~3s to reconfigure.
@@ -128,7 +128,7 @@ void setup() {
   delay(500);
 
   Serial.println("=====================================");
-  Serial.println("  Smart Sprinkler — Humidity Monitor  ");
+  Serial.println("  Agriflow — Humidity Monitor  ");
   Serial.println("=====================================");
 
   dht.begin();

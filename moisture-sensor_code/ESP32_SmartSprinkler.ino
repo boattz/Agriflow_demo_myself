@@ -114,7 +114,7 @@ void setup() {
 
   connectWiFi();
 
-  Serial.println("Smart Sprinkler Started");
+  Serial.println("Agriflow Started");
   Serial.println("Config adjustable from dashboard!");
   Serial.print("Server: ");
   Serial.println(serverUrl);

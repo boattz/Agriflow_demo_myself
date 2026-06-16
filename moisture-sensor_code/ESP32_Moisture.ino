@@ -1,9 +1,9 @@
 /*
  * ============================================
- *  Smart Sprinkler — ESP32 Moisture Sensor
+ *  Agriflow — ESP32 Moisture Sensor
  *  Sends moisture data to the Node.js dashboard.
  *
- *  First boot: joins its own "SmartSprinkler-Setup" WiFi AP,
+ *  First boot: joins its own "Agriflow-Setup" WiFi AP,
  *  opens a setup page to configure your home WiFi + dashboard IP.
  *  After that it reconnects automatically (stored in NVS).
  *
@@ -106,7 +106,7 @@ void setup() {
   delay(500);
 
   Serial.println("=====================================");
-  Serial.println("  Smart Sprinkler — Moisture Monitor  ");
+  Serial.println("  Agriflow — Moisture Monitor  ");
   Serial.println("=====================================");
 
   pinMode(CP_RESET_PIN, INPUT_PULLUP);

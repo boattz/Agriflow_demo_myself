@@ -6,7 +6,7 @@
  *  HOW IT WORKS
  *  ------------
  *  First boot (or after reset): ESP32 opens its own WiFi AP named
- *  "SmartSprinkler-Setup". Join it from your phone/computer, a sign-in
+ *  "Agriflow-Setup". Join it from your phone/computer, a sign-in
  *  page pops up (or browse to http://192.168.4.1), fill in your home
  *  WiFi + the PC's IP that runs the dashboard, then Save. ESP32 reboots
  *  and connects automatically. The settings are stored in NVS, so every
@@ -31,7 +31,7 @@
 #include <Preferences.h>
 
 // ── Defaults ─────────────────────────────────
-#define CP_AP_SSID        "SmartSprinkler-Setup"
+#define CP_AP_SSID        "Agriflow-Setup"
 #define CP_AP_PASS        "setup123"
 #define CP_NS             "sprinkler"   // NVS namespace
 #define CP_RESET_PIN      0             // GPIO0 = BOOT button on most boards
@@ -93,7 +93,7 @@ static String cpBuildPage() {
     String("<!DOCTYPE html><html><head>")
     + "<meta charset='utf-8'>"
     + "<meta name='viewport' content='width=device-width,initial-scale=1'>"
-    + "<title>Smart Sprinkler Setup</title>"
+    + "<title>Agriflow Setup</title>"
     + "<style>"
     + "  *{box-sizing:border-box;margin:0;padding:0}"
     + "  body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;"
@@ -119,7 +119,7 @@ static String cpBuildPage() {
     + "  .hint{font-size:.72rem;color:#4a6070;margin-top:8px}"
     + "</style></head><body>"
     + "<form class='card' action='/save' method='POST'>"
-    + "<h1>&#127793; Smart Sprinkler</h1>"
+    + "<h1>&#127793; Agriflow</h1>"
     + "<p class='sub'>Set up your device — saved on the ESP32, no code editing needed.</p>"
 
     + "<label>&#127760; Home WiFi Network</label>"

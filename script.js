@@ -1,5 +1,5 @@
 // ================================================
-// Smart Sprinkler — Moisture Dashboard | script.js
+// Agriflow — Moisture Dashboard | script.js
 // ================================================
 
 let history     = [];

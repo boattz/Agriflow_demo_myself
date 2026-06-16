@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: smart-sprinkler
+    name: agriflow
     runtime: node
     plan: free
     buildCommand: npm install

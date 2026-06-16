@@ -309,7 +309,7 @@ app.listen(PORT, '0.0.0.0', async () => {
   const ip = localIP();
   console.log('');
   console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║   Smart Sprinkler — Moisture Server              ║');
+  console.log('║   Agriflow — Moisture Server              ║');
   console.log('╠══════════════════════════════════════════════════╣');
   console.log(`║  Dashboard : http://localhost:${PORT}              ║`);
   console.log(`║  Network   : http://${ip}:${PORT}             ║`);
