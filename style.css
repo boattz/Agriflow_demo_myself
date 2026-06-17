@@ -301,7 +301,6 @@ main{
   padding:16px 12px;
   transition:var(--tr);
   min-width:0;
-  overflow:hidden;
 }
 .mini-card:hover{
   border-color:rgba(46,213,115,.35);
@@ -319,26 +318,21 @@ main{
 .mini-icon svg{width:20px;height:20px;color:var(--muted)}
 .mini-body{
   width:100%;
-  min-width:0;
-  overflow:hidden;
 }
 .mini-label{
   font-size:.6rem;
   text-transform:uppercase;
-  letter-spacing:.08em;
+  letter-spacing:.06em;
   color:var(--muted);
   font-weight:600;
-  margin-bottom:2px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  margin-bottom:4px;
+  line-height:1.3;
 }
 .mini-val{
-  font-size:1.05rem;
+  font-size:1rem;
   font-weight:800;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+  line-height:1.2;
+  word-break:break-word;
 }
 
 /* ══════════════════════════════════════════════
@@ -819,10 +813,12 @@ tbody tr.new-row{animation:rowFlash .8s ease}
   .valve-circle svg{width:24px;height:24px}
   .valve-status{font-size:1.2rem}
   .raw-val{font-size:1.3rem}
-  .stats-col{gap:10px}
-  .mini-card{padding:12px}
-  .mini-icon svg{width:18px;height:18px}
-  .mini-val{font-size:1rem}
+  .stats-col{grid-template-columns:1fr 1fr;gap:8px}
+  .mini-card{padding:10px 8px;gap:6px}
+  .mini-icon{width:32px;height:32px}
+  .mini-icon svg{width:16px;height:16px}
+  .mini-label{font-size:.5rem}
+  .mini-val{font-size:.85rem}
   .config-item{padding:12px}
   .config-icon{width:36px;height:36px}
   .cfg-num{font-size:1.1rem}
