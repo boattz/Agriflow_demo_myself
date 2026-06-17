@@ -294,9 +294,11 @@ main{
 }
 .mini-card{
   display:flex;
+  flex-direction:column;
   align-items:center;
-  gap:12px;
-  padding:14px 16px;
+  text-align:center;
+  gap:8px;
+  padding:16px 12px;
   transition:var(--tr);
   min-width:0;
   overflow:hidden;
@@ -308,15 +310,15 @@ main{
 }
 .mini-icon{
   flex-shrink:0;
-  width:36px;height:36px;
+  width:40px;height:40px;
   display:flex;align-items:center;justify-content:center;
   background:rgba(255,255,255,.03);
   border:1px solid rgba(255,255,255,.06);
-  border-radius:10px;
+  border-radius:12px;
 }
-.mini-icon svg{width:18px;height:18px;color:var(--muted)}
+.mini-icon svg{width:20px;height:20px;color:var(--muted)}
 .mini-body{
-  flex:1;
+  width:100%;
   min-width:0;
   overflow:hidden;
 }
@@ -332,7 +334,7 @@ main{
   text-overflow:ellipsis;
 }
 .mini-val{
-  font-size:1rem;
+  font-size:1.05rem;
   font-weight:800;
   white-space:nowrap;
   overflow:hidden;
@@ -760,6 +762,7 @@ tbody tr.new-row{animation:rowFlash .8s ease}
   .guide-box li{font-size:.95rem;padding:14px 16px;padding-left:56px}
   .guide-box li::before{width:28px;height:28px;font-size:.75rem}
   .stats-col{grid-template-columns:repeat(4,1fr);gap:14px}
+  .mini-card{padding:18px 14px}
 }
 
 /* Desktop (1024px+) */
