@@ -148,6 +148,27 @@ main{
   grid-template-columns:1fr;
   gap:16px;
 }
+/* Tablet: ring card ไม่ต้องเต็มจอ */
+@media(min-width:768px){
+  .row-top{
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+  }
+  .card-moisture{
+    grid-column:1/-1;
+    max-width:360px;
+    margin:0 auto;
+    width:100%;
+  }
+}
+/* Desktop: 3 columns เหมือนเดิม */
+@media(min-width:1024px){
+  .row-top{
+    grid-template-columns:340px 240px 1fr;
+    gap:22px;
+  }
+  .card-moisture{max-width:none}
+}
 
 /* ── Moisture Ring Card ── */
 .card-moisture{display:flex;flex-direction:column;align-items:center}
@@ -268,9 +289,9 @@ main{
 .mini-card{display:flex;align-items:center;gap:12px;padding:14px 16px;transition:var(--tr)}
 .mini-card:hover{border-color:rgba(46,213,115,.35);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
 .mini-icon{flex-shrink:0}
-.mini-icon svg{width:22px;height:22px;color:var(--muted)}
-.mini-label{font-size:.65rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600;margin-bottom:2px}
-.mini-val{font-size:1.1rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-icon svg{width:20px;height:20px;color:var(--muted)}
+.mini-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:2px}
+.mini-val{font-size:1rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* ══════════════════════════════════════════════
    CONFIG CARD — Editable Sliders
