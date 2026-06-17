@@ -285,13 +285,59 @@ main{
 .raw-range{font-size:.6rem;color:var(--muted);margin-top:4px}
 
 /* ── Mini Cards ── */
-.stats-col{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;align-content:start}
-.mini-card{display:flex;align-items:center;gap:12px;padding:14px 16px;transition:var(--tr)}
-.mini-card:hover{border-color:rgba(46,213,115,.35);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.mini-icon{flex-shrink:0}
-.mini-icon svg{width:20px;height:20px;color:var(--muted)}
-.mini-label{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin-bottom:2px}
-.mini-val{font-size:1rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stats-col{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+  align-content:start;
+  width:100%;
+}
+.mini-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  transition:var(--tr);
+  min-width:0;
+  overflow:hidden;
+}
+.mini-card:hover{
+  border-color:rgba(46,213,115,.35);
+  transform:translateY(-2px);
+  box-shadow:0 8px 24px rgba(0,0,0,.3);
+}
+.mini-icon{
+  flex-shrink:0;
+  width:36px;height:36px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;
+}
+.mini-icon svg{width:18px;height:18px;color:var(--muted)}
+.mini-body{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+}
+.mini-label{
+  font-size:.6rem;
+  text-transform:uppercase;
+  letter-spacing:.08em;
+  color:var(--muted);
+  font-weight:600;
+  margin-bottom:2px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.mini-val{
+  font-size:1rem;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 
 /* ══════════════════════════════════════════════
    CONFIG CARD — Editable Sliders
@@ -713,6 +759,7 @@ tbody tr.new-row{animation:rowFlash .8s ease}
   .guide-box h2{font-size:1.5rem}
   .guide-box li{font-size:.95rem;padding:14px 16px;padding-left:56px}
   .guide-box li::before{width:28px;height:28px;font-size:.75rem}
+  .stats-col{grid-template-columns:repeat(4,1fr);gap:14px}
 }
 
 /* Desktop (1024px+) */
