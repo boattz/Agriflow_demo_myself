@@ -39,39 +39,7 @@ async function connectDB() {
   try {
     db = await mysql.createConnection(dbConfig);
     console.log('[DB] Connected to TiDB');
-
-    // Create tables if not exist
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS readings (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        device VARCHAR(50),
-        raw INT,
-        moisture DECIMAL(5,1),
-        valve VARCHAR(10),
-        level_label VARCHAR(20),
-        level_color VARCHAR(10),
-        humidity DECIMAL(5,1),
-        temperature DECIMAL(5,1),
-        heat_index DECIMAL(5,1),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS config (
-        id INT PRIMARY KEY DEFAULT 1,
-        open_threshold INT DEFAULT 40,
-        watering_minutes INT DEFAULT 3,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-
-    // Insert default config if not exist
-    await db.execute(`
-      INSERT IGNORE INTO config (id, open_threshold, watering_minutes) VALUES (1, 40, 3)
-    `);
-
-    console.log('[DB] Tables ready');
+    console.log('[DB] Tables must be created manually in TiDB Dashboard');
   } catch (err) {
     console.error('[DB] Connection failed:', err.message);
     console.log('[DB] Retrying in 5 seconds...');
