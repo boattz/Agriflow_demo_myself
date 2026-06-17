@@ -23,8 +23,11 @@ app.use(express.static(__dirname, {
 }));
 
 // ── PostgreSQL Connection (Supabase Pooler) ───
+const dbUrl = process.env.DATABASE_URL;
+console.log('[DB] URL defined:', dbUrl ? 'YES (length: ' + dbUrl.length + ')' : 'NO');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: dbUrl || 'postgresql://localhost:5432/postgres',
   ssl: { rejectUnauthorized: false }
 });
 
