@@ -1,20 +1,19 @@
 const express = require('express');
 const cors    = require('cors');
-const mysql   = require('mysql2/promise');
+const { Pool } = require('pg');
 const os      = require('os');
 
 const app  = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(express.json());
 
-// Serve only dashboard files (not .ino, .h, server.js etc.)
+// Serve only dashboard files
 app.use(express.static(__dirname, {
   index: 'index.html',
   extensions: ['html'],
   setHeaders: (res, path) => {
-    // Only allow specific file types
     const allowed = ['.html', '.css', '.js', '.json', '.png', '.jpg', '.svg', '.ico'];
     const ext = require('path').extname(path);
     if (!allowed.includes(ext)) {
@@ -23,23 +22,60 @@ app.use(express.static(__dirname, {
   }
 }));
 
-// ── TiDB Connection ───────────────────────────
-const dbConfig = {
-  host:     process.env.TIDB_HOST     || 'localhost',
-  port:     process.env.TIDB_PORT     || 4000,
-  user:     process.env.TIDB_USER     || 'root',
-  password: process.env.TIDB_PASSWORD || '',
-  database: process.env.TIDB_DATABASE || 'smart_sprinkler',
-  ssl:      { rejectUnauthorized: true }
-};
+// ── PostgreSQL Connection (Supabase) ──────────
+const pool = new Pool({
+  host:     process.env.DB_HOST,
+  port:     process.env.DB_PORT     || 5432,
+  user:     process.env.DB_USER     || 'postgres',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME     || 'postgres',
+  ssl:      { rejectUnauthorized: false }
+});
 
-let db = null;
+let dbReady = false;
 
 async function connectDB() {
   try {
-    db = await mysql.createConnection(dbConfig);
-    console.log('[DB] Connected to TiDB');
-    console.log('[DB] Tables must be created manually in TiDB Dashboard');
+    const client = await pool.connect();
+    console.log('[DB] Connected to PostgreSQL (Supabase)');
+
+    // Create tables if not exist
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS readings (
+        id BIGSERIAL PRIMARY KEY,
+        device VARCHAR(50),
+        raw INT,
+        moisture DECIMAL(5,1),
+        valve VARCHAR(10),
+        level_label VARCHAR(20),
+        level_color VARCHAR(10),
+        humidity DECIMAL(5,1),
+        temperature DECIMAL(5,1),
+        heat_index DECIMAL(5,1),
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS config (
+        id INT PRIMARY KEY DEFAULT 1,
+        open_threshold INT DEFAULT 40,
+        watering_minutes INT DEFAULT 3,
+        reset_wifi BOOLEAN DEFAULT FALSE,
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
+
+    // Insert default config if not exist
+    await client.query(`
+      INSERT INTO config (id, open_threshold, watering_minutes)
+      VALUES (1, 40, 3)
+      ON CONFLICT (id) DO NOTHING
+    `);
+
+    client.release();
+    dbReady = true;
+    console.log('[DB] Tables ready');
   } catch (err) {
     console.error('[DB] Connection failed:', err.message);
     console.log('[DB] Retrying in 5 seconds...');
@@ -49,7 +85,7 @@ async function connectDB() {
 
 connectDB();
 
-// ── Config (from TiDB) ────────────────────────
+// ── Config ───────────────────────────────────
 let config = {
   openThreshold:   40,
   wateringMinutes: 3,
@@ -57,12 +93,12 @@ let config = {
 };
 
 async function loadConfig() {
-  if (!db) return;
+  if (!dbReady) return;
   try {
-    const [rows] = await db.execute('SELECT * FROM config WHERE id = 1');
-    if (rows.length) {
-      config.openThreshold   = rows[0].open_threshold;
-      config.wateringMinutes = rows[0].watering_minutes;
+    const result = await pool.query('SELECT * FROM config WHERE id = 1');
+    if (result.rows.length) {
+      config.openThreshold   = result.rows[0].open_threshold;
+      config.wateringMinutes = result.rows[0].watering_minutes;
     }
   } catch (err) {
     console.error('[DB] Load config failed:', err.message);
@@ -70,18 +106,18 @@ async function loadConfig() {
 }
 
 async function saveConfig() {
-  if (!db) return;
+  if (!dbReady) return;
   try {
-    await db.execute(
-      'UPDATE config SET open_threshold = ?, watering_minutes = ? WHERE id = 1',
-      [config.openThreshold, config.wateringMinutes]
+    await pool.query(
+      'UPDATE config SET open_threshold = $1, watering_minutes = $2, reset_wifi = $3 WHERE id = 1',
+      [config.openThreshold, config.wateringMinutes, config.resetWifi]
     );
   } catch (err) {
     console.error('[DB] Save config failed:', err.message);
   }
 }
 
-// ── Keep-Alive Ping ───────────────────────────
+// ── Keep-Alive Ping ──────────────────────────
 const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000;
 const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || `https://agriflow-mvt7.onrender.com`;
 
@@ -91,17 +127,14 @@ setInterval(() => {
     .catch(() => {});
 }, KEEP_ALIVE_INTERVAL);
 
-// Also ping on startup
-fetch(KEEP_ALIVE_URL).catch(() => {});
-
-// ── SSE Clients ───────────────────────────────
+// ── SSE Clients ──────────────────────────────
 let clients = [];
 function broadcast(data) {
   const msg = `data: ${JSON.stringify(data)}\n\n`;
   clients = clients.filter(c => { try { c.write(msg); return true; } catch { return false; } });
 }
 
-// ── Soil Moisture Level ───────────────────────
+// ── Soil Moisture Level ──────────────────────
 function soilLevel(moisture) {
   if (moisture < 20)                         return { label: 'Very Dry',  color: '#ff4757' };
   if (moisture >= 20 && moisture < 40)       return { label: 'Dry',       color: '#ff6b35' };
@@ -110,12 +143,12 @@ function soilLevel(moisture) {
   return                                            { label: 'Saturated', color: '#7b2ff7' };
 }
 
-// ── GET /api/config ───────────────────────────
+// ── GET /api/config ──────────────────────────
 app.get('/api/config', (req, res) => {
   res.json(config);
 });
 
-// ── POST /api/config ──────────────────────────
+// ── POST /api/config ─────────────────────────
 app.post('/api/config', async (req, res) => {
   const { openThreshold, wateringMinutes } = req.body;
 
@@ -128,7 +161,7 @@ app.post('/api/config', async (req, res) => {
   res.json({ ok: true, config });
 });
 
-// ── POST /api/reset-wifi ──────────────────────
+// ── POST /api/reset-wifi ─────────────────────
 app.post('/api/reset-wifi', async (req, res) => {
   console.log('[RESET] WiFi reset requested from dashboard');
   config.resetWifi = true;
@@ -137,7 +170,7 @@ app.post('/api/reset-wifi', async (req, res) => {
   res.json({ ok: true, message: 'ESP32 will reset WiFi on next send' });
 });
 
-// ── POST /api/sensor ──────────────────────────
+// ── POST /api/sensor ─────────────────────────
 app.post('/api/sensor', async (req, res) => {
   const {
     raw, moisture, valve, device, threshold, wateringMinutes: wm,
@@ -165,12 +198,12 @@ app.post('/api/sensor', async (req, res) => {
     timestamp:   ts
   };
 
-  // Save to TiDB
-  if (db) {
+  // Save to PostgreSQL
+  if (dbReady) {
     try {
-      await db.execute(
+      await pool.query(
         `INSERT INTO readings (device, raw, moisture, valve, level_label, level_color, humidity, temperature, heat_index)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [id, reading.raw, reading.moisture, reading.valve,
          level?.label || null, level?.color || null,
          reading.humidity, reading.temperature, reading.heatIndex]
@@ -188,19 +221,18 @@ app.post('/api/sensor', async (req, res) => {
   res.json({ ok: true, reading, config });
 });
 
-// ── GET /api/data ─────────────────────────────
+// ── GET /api/data ────────────────────────────
 app.get('/api/data', async (req, res) => {
   let history = [];
   let devices = {};
 
-  if (db) {
+  if (dbReady) {
     try {
-      // Get last 200 readings
-      const [rows] = await db.execute(
+      const result = await pool.query(
         'SELECT * FROM readings ORDER BY created_at DESC LIMIT 200'
       );
 
-      history = rows.map(r => ({
+      history = result.rows.map(r => ({
         device:      r.device,
         raw:         r.raw,
         moisture:    r.moisture !== null ? String(r.moisture) : null,
@@ -220,16 +252,12 @@ app.get('/api/data', async (req, res) => {
         devices[r.device].count++;
       }
 
-      // Get total count
-      const [countResult] = await db.execute('SELECT COUNT(*) as total FROM readings');
-      const totalCount = countResult[0].total;
-
-      // Update device counts with total
+      // Get total count per device
       for (const d of Object.keys(devices)) {
-        const [deviceCount] = await db.execute(
-          'SELECT COUNT(*) as count FROM readings WHERE device = ?', [d]
+        const countResult = await pool.query(
+          'SELECT COUNT(*) as count FROM readings WHERE device = $1', [d]
         );
-        devices[d].count = deviceCount[0].count;
+        devices[d].count = parseInt(countResult.rows[0].count);
       }
 
     } catch (err) {
@@ -240,7 +268,7 @@ app.get('/api/data', async (req, res) => {
   res.json({ latest: history[0] || null, history, devices, config });
 });
 
-// ── SSE stream ────────────────────────────────
+// ── SSE stream ───────────────────────────────
 app.get('/api/events', (req, res) => {
   res.setHeader('Content-Type',                'text/event-stream');
   res.setHeader('Cache-Control',               'no-cache');
@@ -251,12 +279,12 @@ app.get('/api/events', (req, res) => {
   // Send initial data
   (async () => {
     let initData = { latest: null, history: [], devices: {}, config };
-    if (db) {
+    if (dbReady) {
       try {
-        const [rows] = await db.execute(
+        const result = await pool.query(
           'SELECT * FROM readings ORDER BY created_at DESC LIMIT 200'
         );
-        initData.history = rows.map(r => ({
+        initData.history = result.rows.map(r => ({
           device: r.device, raw: r.raw,
           moisture: r.moisture !== null ? String(r.moisture) : null,
           valve: r.valve,
@@ -277,7 +305,7 @@ app.get('/api/events', (req, res) => {
   req.on('close', () => { clearInterval(hb); clients = clients.filter(c => c !== res); });
 });
 
-// ── Local IP ──────────────────────────────────
+// ── Local IP ─────────────────────────────────
 function localIP() {
   for (const ifaces of Object.values(os.networkInterfaces()))
     for (const i of ifaces)
@@ -290,11 +318,11 @@ app.listen(PORT, '0.0.0.0', async () => {
   const ip = localIP();
   console.log('');
   console.log('╔══════════════════════════════════════════════════╗');
-  console.log('║   Agriflow — Moisture Server              ║');
+  console.log('║   Agriflow — Moisture Server                     ║');
   console.log('╠══════════════════════════════════════════════════╣');
   console.log(`║  Dashboard : http://localhost:${PORT}              ║`);
   console.log(`║  Network   : http://${ip}:${PORT}             ║`);
-  console.log(`║  Database  : TiDB (MySQL-compatible)             ║`);
+  console.log(`║  Database  : PostgreSQL (Supabase)               ║`);
   console.log(`║  ESP32 URL : POST /api/sensor                   ║`);
   console.log('╚══════════════════════════════════════════════════╝');
   console.log('');

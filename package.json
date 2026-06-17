@@ -1,7 +1,7 @@
 {
-  "name": "smart-spinker-moisture-server",
+  "name": "agriflow-server",
   "version": "1.0.0",
-  "description": "ESP32 Moisture Sensor Dashboard Server",
+  "description": "Agriflow IoT Monitoring Dashboard Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -10,7 +10,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.18.2",
-    "mysql2": "^3.22.5"
+    "pg": "^8.21.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
