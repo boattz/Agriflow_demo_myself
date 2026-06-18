@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Persistence (contains readings + config from your devices)
+data.json
+
+# Logs / OS junk
+*.log
+npm-debug-debug*
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
