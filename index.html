@@ -59,6 +59,21 @@
 
 <main id="main-content">
 
+  <!-- Offline Alert Banner -->
+  <div class="offline-banner" id="offline-banner" role="alert" aria-live="assertive" hidden>
+    <div class="offline-banner-icon">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1l22 22"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+    </div>
+    <div class="offline-banner-body">
+      <div class="offline-banner-title">ESP32 Offline</div>
+      <div class="offline-banner-msg" id="offline-banner-msg">No data received for <span id="offline-duration">0</span>s</div>
+    </div>
+    <div class="offline-banner-countdown">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span id="offline-countdown">—</span>
+    </div>
+  </div>
+
   <!-- Section: Sensor Data -->
   <div class="section-header"><h3>Sensor Data</h3></div>
 
@@ -126,6 +141,13 @@
 
     <!-- Stats -->
     <div class="stats-col">
+      <div class="card mini-card device-status-card" id="device-status-card">
+        <div class="device-status-indicator" id="device-status-indicator"></div>
+        <div class="mini-body">
+          <div class="mini-label">Device Status</div>
+          <div class="mini-val" id="device-status-val">Waiting…</div>
+        </div>
+      </div>
       <div class="card mini-card" id="mini-device">
         <div class="mini-icon" aria-hidden="true">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>

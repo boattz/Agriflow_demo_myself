@@ -206,6 +206,10 @@ function updateDataIndicator() {
   
   timeEl.textContent = text;
   indicator.className = className;
+
+  // Update offline banner & device status
+  updateOfflineBanner(diff);
+  updateDeviceStatus(diff);
 }
 
 // Update indicators every second
@@ -213,6 +217,76 @@ setInterval(() => {
   updateLastSeen();
   updateDataIndicator();
 }, 1000);
+
+// ── Offline Detection ─────────────────────────
+let wasOffline = false;
+let offlineCheckedAt = null;
+
+function updateOfflineBanner(diffSec) {
+  const banner = document.getElementById('offline-banner');
+  const durationEl = document.getElementById('offline-duration');
+  const countdownEl = document.getElementById('offline-countdown');
+  const msgEl = document.getElementById('offline-banner-msg');
+
+  if (diffSec < 45) {
+    if (!banner.hidden && wasOffline) {
+      // Just came back online
+      showToast('Device Online', 'ESP32 is sending data again', toastIcons.success, 'success');
+    }
+    banner.hidden = true;
+    wasOffline = false;
+    return;
+  }
+
+  // Show banner when offline for 45+ seconds
+  banner.hidden = false;
+  durationEl.textContent = diffSec;
+
+  // Countdown to next expected reading (ESP32 sends every 30s)
+  const nextExpected = 30 - (diffSec % 30);
+  countdownEl.textContent = nextExpected + 's';
+
+  if (diffSec >= 120) {
+    msgEl.innerHTML = 'No data for <b>' + Math.floor(diffSec / 60) + 'm ' + (diffSec % 60) + 's</b>. Check WiFi power or signal.';
+  } else {
+    msgEl.innerHTML = 'No data received for <b>' + diffSec + 's</b>.';
+  }
+
+  if (!wasOffline && diffSec >= 60) {
+    showToast('Device Offline', 'ESP32 hasn\'t sent data for ' + diffSec + 's. Check connection.', toastIcons.error, 'error');
+  }
+  wasOffline = true;
+}
+
+function updateDeviceStatus(diffSec) {
+  const indicator = document.getElementById('device-status-indicator');
+  const statusEl = document.getElementById('device-status-val');
+
+  if (!lastReadingTime) {
+    indicator.className = 'device-status-indicator';
+    statusEl.textContent = 'Waiting…';
+    statusEl.style.color = 'var(--muted)';
+    return;
+  }
+
+  if (diffSec < 10) {
+    indicator.className = 'device-status-indicator online';
+    statusEl.textContent = 'Online ✓';
+    statusEl.style.color = 'var(--green)';
+  } else if (diffSec < 60) {
+    indicator.className = 'device-status-indicator online';
+    statusEl.textContent = 'Connected';
+    statusEl.style.color = 'var(--green)';
+  } else if (diffSec < 120) {
+    indicator.className = 'device-status-indicator stale';
+    statusEl.textContent = 'Stale (' + Math.floor(diffSec / 60) + 'm)';
+    statusEl.style.color = 'var(--orange)';
+  } else {
+    indicator.className = 'device-status-indicator offline';
+    statusEl.textContent = 'Offline (' + Math.floor(diffSec / 60) + 'm)';
+    statusEl.style.color = 'var(--red)';
+  }
+}
 
 // ── Table ─────────────────────────────────────
 function updateTable() {
@@ -339,12 +413,20 @@ function processReading(reading) {
 }
 
 // ── SSE ───────────────────────────────────────
+let sseConnected = false;
+let pollTimer = null;
+
 function connectSSE() {
   setStatus('connecting');
-  if (evtSrc) evtSrc.close();
+  if (evtSrc) { evtSrc.close(); evtSrc = null; }
   evtSrc = new EventSource('/api/events');
 
-  evtSrc.onopen = () => { setStatus('online'); clearTimeout(rTimer); };
+  evtSrc.onopen = () => {
+    setStatus('online');
+    clearTimeout(rTimer);
+    sseConnected = true;
+    startPolling();
+  };
 
   evtSrc.onmessage = e => {
     try {
@@ -373,8 +455,45 @@ function connectSSE() {
     } catch(err) { console.warn(err); }
   };
 
-  evtSrc.onerror = () => { setStatus('offline'); evtSrc.close(); rTimer = setTimeout(connectSSE, 5000); };
+  evtSrc.onerror = () => {
+    sseConnected = false;
+    setStatus('offline');
+    evtSrc.close();
+    evtSrc = null;
+    rTimer = setTimeout(connectSSE, 2000);
+  };
 }
+
+// ── Polling Fallback (runs always) ─────────────
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(() => {
+    if (sseConnected) return;
+    fetch('/api/data')
+      .then(r => r.json())
+      .then(data => {
+        if (data.latest) {
+          const existing = history.find(h => h.timestamp === data.latest.timestamp);
+          if (!existing) {
+            processReading(data.latest);
+          }
+        }
+      })
+      .catch(() => {});
+  }, 10000);
+}
+
+// Start polling immediately for initial data
+fetch('/api/data')
+  .then(r => r.json())
+  .then(data => {
+    if (data.latest && history.length === 0) {
+      processReading(data.latest);
+      totalCount = data.history ? data.history.length : 0;
+    }
+    if (data.config) handleConfigUpdate(data.config);
+  })
+  .catch(() => {});
 
 // ── Toggles ───────────────────────────────────
 document.querySelectorAll('.tog').forEach(btn => {

@@ -875,3 +875,67 @@ input:focus-visible,select:focus-visible{
   border-radius:4px;font-family:'Space Mono',monospace;
   font-size:.7rem;color:var(--muted);
 }
+
+/* ── Offline Banner ── */
+.offline-banner{
+  max-width:1400px;margin:16px auto 0;padding:14px 20px;
+  display:flex;align-items:center;gap:14px;
+  background:rgba(255,71,87,.08);
+  border:1px solid rgba(255,71,87,.3);
+  border-radius:var(--rl);
+  animation:offlinePulse 2s ease-in-out infinite;
+  backdrop-filter:blur(12px);
+}
+.offline-banner[hidden]{display:none}
+.offline-banner-icon{
+  flex-shrink:0;width:40px;height:40px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,71,87,.15);border-radius:12px;
+  color:var(--red);
+}
+.offline-banner-body{flex:1}
+.offline-banner-title{
+  font-weight:700;font-size:.9rem;color:var(--red);
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.offline-banner-msg{
+  font-size:.78rem;color:var(--muted);margin-top:2px;
+}
+.offline-banner-countdown{
+  flex-shrink:0;display:flex;align-items:center;gap:6px;
+  font-family:'Space Mono',monospace;font-size:.85rem;
+  color:var(--red);font-weight:700;
+  background:rgba(255,71,87,.1);padding:6px 12px;border-radius:10px;
+}
+@keyframes offlinePulse{
+  0%,100%{border-color:rgba(255,71,87,.3);box-shadow:0 0 0 rgba(255,71,87,0)}
+  50%{border-color:rgba(255,71,87,.6);box-shadow:0 0 20px rgba(255,71,87,.1)}
+}
+
+/* ── Device Status Card ── */
+.device-status-card{
+  position:relative;overflow:hidden;
+}
+.device-status-indicator{
+  position:absolute;top:12px;right:12px;
+  width:10px;height:10px;border-radius:50%;
+  background:var(--muted);
+  transition:background var(--tr),box-shadow var(--tr);
+}
+.device-status-indicator.online{
+  background:var(--green);
+  box-shadow:0 0 8px rgba(46,213,115,.6);
+  animation:statusBlink 2s ease-in-out infinite;
+}
+.device-status-indicator.offline{
+  background:var(--red);
+  box-shadow:0 0 8px rgba(255,71,87,.6);
+  animation:statusBlink 1s ease-in-out infinite;
+}
+.device-status-indicator.stale{
+  background:var(--orange);
+  box-shadow:0 0 8px rgba(255,165,2,.5);
+}
+@keyframes statusBlink{
+  0%,100%{opacity:1}50%{opacity:.5}
+}

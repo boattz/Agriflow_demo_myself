@@ -117,7 +117,7 @@ async function saveConfig() {
 }
 
 // ── Keep-Alive Ping ──────────────────────────
-const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000;
+const KEEP_ALIVE_INTERVAL = 5 * 60 * 1000; // every 5 min — Render sleeps after 10 min
 const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL || `https://agriflow-mvt7.onrender.com`;
 
 setInterval(() => {
@@ -274,34 +274,36 @@ app.get('/api/events', (req, res) => {
   res.setHeader('Cache-Control',               'no-cache');
   res.setHeader('Connection',                  'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-Accel-Buffering',           'no'); // nginx/cloudflare bypass
   res.flushHeaders();
 
-  // Send initial data
-  (async () => {
-    let initData = { latest: null, history: [], devices: {}, config };
-    if (dbReady) {
-      try {
-        const result = await pool.query(
-          'SELECT * FROM readings ORDER BY created_at DESC LIMIT 200'
-        );
-        initData.history = result.rows.map(r => ({
-          device: r.device, raw: r.raw,
-          moisture: r.moisture !== null ? String(r.moisture) : null,
-          valve: r.valve,
-          level: r.level_label ? { label: r.level_label, color: r.level_color } : null,
-          humidity: r.humidity !== null ? String(r.humidity) : null,
-          temperature: r.temperature !== null ? String(r.temperature) : null,
-          heatIndex: r.heat_index !== null ? String(r.heat_index) : null,
-          timestamp: r.created_at
-        }));
-        initData.latest = initData.history[0] || null;
-      } catch {}
-    }
+  // Send initial data immediately (no await — fire and forget)
+  const initData = { latest: null, history: [], devices: {}, config };
+  if (dbReady) {
+    pool.query(
+      'SELECT * FROM readings ORDER BY created_at DESC LIMIT 200'
+    ).then(result => {
+      initData.history = result.rows.map(r => ({
+        device: r.device, raw: r.raw,
+        moisture: r.moisture !== null ? String(r.moisture) : null,
+        valve: r.valve,
+        level: r.level_label ? { label: r.level_label, color: r.level_color } : null,
+        humidity: r.humidity !== null ? String(r.humidity) : null,
+        temperature: r.temperature !== null ? String(r.temperature) : null,
+        heatIndex: r.heat_index !== null ? String(r.heat_index) : null,
+        timestamp: r.created_at
+      }));
+      initData.latest = initData.history[0] || null;
+      res.write(`data: ${JSON.stringify({ type: 'init', data: initData })}\n\n`);
+    }).catch(() => {
+      res.write(`data: ${JSON.stringify({ type: 'init', data: initData })}\n\n`);
+    });
+  } else {
     res.write(`data: ${JSON.stringify({ type: 'init', data: initData })}\n\n`);
-  })();
+  }
 
   clients.push(res);
-  const hb = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 20000);
+  const hb = setInterval(() => { try { res.write(': ping\n\n'); } catch {} }, 15000);
   req.on('close', () => { clearInterval(hb); clients = clients.filter(c => c !== res); });
 });
 
